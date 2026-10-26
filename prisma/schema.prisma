@@ -1,0 +1,87 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Profile {
+  id          Int          @id @default(autoincrement())
+  slug        String       @unique
+  name        String
+  title       String
+  description String
+  location    String?
+  links       Link[]
+  skills      Skill[]
+  experience  Experience[]
+  projects    Project[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Link {
+  id        Int     @id @default(autoincrement())
+  profileId Int
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  kind      String
+  label     String
+  url       String
+  position  Int     @default(0)
+
+  @@index([profileId])
+}
+
+model Skill {
+  id        Int     @id @default(autoincrement())
+  profileId Int
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name      String
+  category  String
+  position  Int     @default(0)
+
+  @@unique([profileId, name])
+  @@index([profileId])
+}
+
+model Experience {
+  id           Int           @id @default(autoincrement())
+  profileId    Int
+  profile      Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  company      String
+  position     String
+  summary      String?
+  startDate    DateTime
+  endDate      DateTime?
+  sortOrder    Int           @default(0)
+  achievements Achievement[]
+
+  @@index([profileId])
+}
+
+model Achievement {
+  id           Int        @id @default(autoincrement())
+  experienceId Int
+  experience   Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  text         String
+  position     Int        @default(0)
+
+  @@index([experienceId])
+}
+
+model Project {
+  id          Int     @id @default(autoincrement())
+  profileId   Int
+  profile     Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  url         String?
+  repoUrl     String?
+  stack       String[]
+  position    Int     @default(0)
+
+  @@index([profileId])
+}
