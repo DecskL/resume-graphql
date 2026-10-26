@@ -1,0 +1,33 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: app, POSTGRES_PASSWORD: app, POSTGRES_DB: resume }
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U app" --health-interval 3s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://app:app@localhost:5432/resume?schema=public
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npx prisma migrate deploy && npx prisma db seed
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+      - run: npm run test:e2e
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose up -d --build --wait
+      - run: |
+          curl -fsS http://localhost:3000/graphql -H 'content-type: application/json' \
+            -d '{"query":"{ profile { name } }"}' | grep -q 'Михаил'
+      - if: always()
+        run: docker compose logs api && docker compose down -v
