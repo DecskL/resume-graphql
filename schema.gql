@@ -1,0 +1,96 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Achievement {
+  id: ID!
+  text: String!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+"""Место работы. achievements загружаются батчем через DataLoader"""
+type Experience {
+  achievements: [Achievement!]!
+  company: String!
+
+  """Длительность в месяцах"""
+  durationMonths: Int!
+
+  """null — работа продолжается"""
+  endDate: DateTime
+  id: ID!
+  isCurrent: Boolean!
+
+  """Период работы, например «Июль 2026 — по настоящее время»"""
+  period: String!
+  position: String!
+  startDate: DateTime!
+  summary: String
+}
+
+"""Ссылка на профессиональный ресурс"""
+type Link {
+  id: ID!
+
+  """Тип ссылки: github, linkedin, site…"""
+  kind: String!
+  label: String!
+  url: String!
+}
+
+"""Профиль кандидата"""
+type Profile {
+  description: String!
+  experience: [Experience!]!
+  id: ID!
+  links: [Link!]!
+  location: String
+  name: String!
+  projects: [Project!]!
+  skillGroups: [SkillGroup!]!
+  skills(
+    """
+    Фильтр по категории, например "Backend"
+    """
+    category: String
+  ): [Skill!]!
+  slug: String!
+  title: String!
+}
+
+type Project {
+  description: String
+  id: ID!
+  name: String!
+
+  """Ссылка на репозиторий"""
+  repoUrl: String
+  stack: [String!]!
+
+  """Ссылка на работающий проект"""
+  url: String
+}
+
+type Query {
+  """Профиль кандидата. Без slug возвращается основной профиль"""
+  profile(slug: String): Profile!
+
+  """Все профили (пример списка, где DataLoader убирает N+1)"""
+  profiles: [Profile!]!
+}
+
+type Skill {
+  category: String!
+  id: ID!
+  name: String!
+}
+
+"""Навыки, сгруппированные по категориям"""
+type SkillGroup {
+  category: String!
+  skills: [Skill!]!
+}
