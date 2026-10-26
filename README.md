@@ -32,6 +32,8 @@ npm run build && npm start
 
 Healthcheck: `GET /health`.
 
+**Демо:** https://resume-graphql.onrender.com/graphql — Sandbox открывается с готовым запросом, достаточно нажать **Run**. Это бесплатный тариф Render, поэтому после простоя первый запрос может идти около минуты.
+
 
 ## Пример запроса
 

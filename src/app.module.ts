@@ -9,6 +9,25 @@ import { ProfileLoadersFactory } from './profile/loaders/profile.loaders';
 import { ProfileModule } from './profile/profile.module';
 import type { GraphQLContext } from './profile/graphql-context';
 
+/** Запрос, который сразу открыт в Apollo Sandbox: достаточно нажать Run */
+const SANDBOX_DEFAULT_QUERY = `query Resume {
+  profile {
+    name
+    title
+    description
+    links { label url }
+    skillGroups { category skills { name } }
+    experience {
+      company
+      position
+      period
+      achievements { text }
+    }
+    projects { name description url repoUrl stack }
+  }
+}
+`;
+
 @Module({
   imports: [
     PrismaModule,
@@ -25,7 +44,7 @@ import type { GraphQLContext } from './profile/graphql-context';
         playground: false,
         introspection: true,
         includeStacktraceInErrorResponses: process.env.NODE_ENV !== 'production',
-        plugins: [ApolloServerPluginLandingPageLocalDefault({ embed: true })],
+        plugins: [ApolloServerPluginLandingPageLocalDefault({ embed: true, document: SANDBOX_DEFAULT_QUERY })],
         context: (): GraphQLContext => ({ loaders: loaders.create() }),
       }),
     }),
