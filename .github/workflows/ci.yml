@@ -6,10 +6,12 @@ jobs:
     services:
       postgres:
         image: postgres:16-alpine
+        # app:app — только для локальной разработки и одноразового CI-контейнера Postgres, не для сервера
         env: { POSTGRES_USER: app, POSTGRES_PASSWORD: app, POSTGRES_DB: resume }
         ports: ["5432:5432"]
         options: --health-cmd "pg_isready -U app" --health-interval 3s --health-retries 20
     env:
+      # Учётка тестовой БД в CI (см. комментарий к postgres выше): только для локальной разработки и CI
       DATABASE_URL: postgresql://app:app@localhost:5432/resume?schema=public
     steps:
       - uses: actions/checkout@v4

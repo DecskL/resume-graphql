@@ -1,21 +1,23 @@
+# Дефолты ${VAR:-app} — только для локальной разработки. Для любого развёртывания задай свои
+# POSTGRES_USER / POSTGRES_PASSWORD в .env (docker compose читает его сам).
 services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: app
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
       POSTGRES_DB: resume
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app -d resume"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d resume"]
       interval: 3s
       retries: 20
 
   api:
     build: .
     environment:
-      DATABASE_URL: postgresql://app:app@db:5432/resume?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-app}@db:5432/resume?schema=public
       PORT: 3000
     ports:
       - "3000:3000"
