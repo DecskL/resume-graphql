@@ -12,9 +12,9 @@ docker compose up --build
 ```
 
 Затем откройте http://localhost:3000/graphql — там Apollo Sandbox. Корень `/` перенаправляет туда же.
-При старте контейнер применяет миграции и заполняет базу (`prisma migrate deploy && prisma db seed`).
+При старте контейнер выполняет `npm run start:prod`: миграции (`prisma migrate deploy`), сид (`node dist/prisma/seed.js`) и запуск сервера (`node dist/src/main.js`).
 
-Без Docker (нужен PostgreSQL):
+Без Docker нужны **Node.js 22** и **PostgreSQL 16**:
 
 ```bash
 cp .env.example .env   # при необходимости поправьте DATABASE_URL
@@ -23,12 +23,26 @@ npx prisma migrate deploy && npx prisma db seed
 npm run build && npm start
 ```
 
+Переменные окружения:
+
+| Переменная | Назначение |
+|---|---|
+| `DATABASE_URL` | строка подключения к PostgreSQL, обязательна (читает Prisma) |
+| `PORT` | порт HTTP-сервера, по умолчанию `3000` |
+| `NODE_ENV` | `production`: схема строится в памяти, стек в ошибках не отдаётся; иначе схема пишется в `schema.gql` |
+| `PRISMA_LOG_QUERIES` | `true`: логировать SQL-запросы Prisma |
+| `POSTGRES_USER`, `POSTGRES_PASSWORD` | только для `docker-compose.yml`: учётка БД, из них собирается `DATABASE_URL` контейнера |
+
+Значения `app`/`app` по умолчанию в `docker-compose.yml` и `.env.example` только для разработки. Для сервера задайте свои.
+
 | Команда | Что делает |
 |---|---|
 | `npm run start:dev` | режим разработки с hot reload |
 | `npm test` | unit-тесты бизнес-логики (без БД) |
 | `npm run test:e2e` | e2e на реальной БД: API целиком и число SQL-запросов |
 | `npm run typecheck` | проверка типов |
+
+Для `npm run test:e2e` нужны `DATABASE_URL` с применёнными миграциями и засеянной базой: `npx prisma migrate deploy && npx prisma db seed`, как в CI.
 
 Healthcheck: `GET /health`.
 
@@ -93,7 +107,7 @@ test/                      unit- и e2e-тесты
 
 **Модель данных.**
 - Достижения вынесены в отдельную таблицу, а не в массив строк. Так у них есть порядок и они грузятся батчем, как и остальные связи.
-- Поле `position` задаёт порядок вывода, как в исходном резюме.
+- Поле `position` — это должность. Порядок вывода задаёт `sortOrder` (по возрастанию, при равенстве — по дате начала, от новых к старым).
 - `endDate = null` означает текущее место работы, а `isCurrent`, `period` и `durationMonths` вычисляются, а не хранятся.
 - На внешних ключах есть индексы, все связи с `onDelete: Cascade`.
 
