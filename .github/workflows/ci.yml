@@ -1,5 +1,12 @@
 name: CI
-on: [push, pull_request]
+
+# ОСНОВНОЙ ПРОГОН ТЕСТОВ — НА БОКСЕ: `boxtest --push` выполняет .boxci.sh
+# (оба задания ниже: build и docker) и ставит коммиту статус box-tests.
+#
+# Здесь — только ручной запуск (Actions → CI → Run workflow) как запасной
+# путь, когда бокс недоступен. Шаги должны совпадать с .boxci.sh.
+on:
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
