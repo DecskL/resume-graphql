@@ -36,11 +36,12 @@ compose() { docker compose -p "$PROJECT" -f docker-compose.yml -f "$TMP/override
 cleanup() {
   local rc=$?
   set +e
+  docker rm -f "$RUN-curl" >/dev/null 2>&1   # до down: держит сеть проекта
   if [ -f "$TMP/override.yml" ]; then
     [ "$rc" -ne 0 ] && compose logs api 2>/dev/null | tail -100
     compose down -v --rmi local --remove-orphans >/dev/null 2>&1
   fi
-  docker rm -f "$NODE" "$PG" >/dev/null 2>&1
+  docker rm -f "$NODE" "$PG" "$RUN-curl" >/dev/null 2>&1
   rm -rf "$TMP"
   exit "$rc"
 }
@@ -90,9 +91,17 @@ EOF
 echo "boxci: compose-проект $PROJECT, api на 127.0.0.1:$APIPORT"
 compose up -d --build --wait
 echo "boxci: опубликованные порты api:"; docker port "$(compose ps -q api)" || true
+Q='{"query":"{ profile { name } }"}'
+# Проброс порта compose-сети на 127.0.0.1 хоста на боксе (WSL, запуск через
+# systemd-run) не отвечает: «Failed to connect after 0 ms», хотя docker port
+# показывает привязку, а `docker run -p 127.0.0.1:...` на стандартном bridge
+# работает. Настраивать бокс нельзя, поэтому хостовая проба — только
+# предупреждение, а обязательная проверка — изнутри сети проекта.
+curl -fsS --max-time 5 "http://127.0.0.1:$APIPORT/graphql" -H 'content-type: application/json' -d "$Q" >/dev/null \
+  || echo "boxci: ВНИМАНИЕ: api не отвечает через проброшенный порт 127.0.0.1:$APIPORT (особенность сети бокса), проверяю изнутри сети compose"
 # без grep -q в конвейере: с pipefail ранний выход grep валит curl (SIGPIPE)
-OUT=$(curl -fsS "http://127.0.0.1:$APIPORT/graphql" -H 'content-type: application/json' \
-  -d '{"query":"{ profile { name } }"}')
+OUT=$(docker run --rm --name "$RUN-curl" --network "${PROJECT}_default" node:22 \
+  curl -fsS --max-time 20 http://api:3000/graphql -H 'content-type: application/json' -d "$Q")
 echo "$OUT"
 [[ "$OUT" == *'Михаил'* ]] || { echo "boxci: в ответе /graphql нет ожидаемого имени"; exit 1; }
 echo "boxci: оба задания прошли"
