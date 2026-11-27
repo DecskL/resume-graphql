@@ -89,6 +89,7 @@ services:
 EOF
 echo "boxci: compose-проект $PROJECT, api на 127.0.0.1:$APIPORT"
 compose up -d --build --wait
+echo "boxci: опубликованные порты api:"; docker port "$(compose ps -q api)" || true
 # без grep -q в конвейере: с pipefail ранний выход grep валит curl (SIGPIPE)
 OUT=$(curl -fsS "http://127.0.0.1:$APIPORT/graphql" -H 'content-type: application/json' \
   -d '{"query":"{ profile { name } }"}')
